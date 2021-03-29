@@ -8,8 +8,10 @@ import sqlite3
 import logging
 from datetime import datetime
 
-def setup_sqlite():
-    connection = sqlite3.connect("sensor_data.db")
+last_value = {}
+
+def setup_sqlite(db_file):
+    connection = sqlite3.connect(db_file)
     cursor = connection.cursor()
 
     cursor.execute('''create table if not exists sensors (id INTEGER PRIMARY KEY, timestamp REAL, model TEXT, name TEXT, novalues INTEGER, protocol TEXT, sensor_id INTEGER)''')
@@ -32,13 +34,21 @@ def update_sensors(sensors, connection):
 def update_sensor_data(sensor_data, connection):
     try:
         row = sensor_data['data']
-        id = sensor_data['id']  
-        cursor = connection.cursor()
-        now = datetime.now()
-        timestamp = datetime.timestamp(now)
-        cursor.execute('INSERT INTO sensor_data(id, timestamp, temp, humidity) VALUES (?,?,?,?)',
-            (sensor_data['id'],timestamp, row[0]['value'], row[1]['value']))
-        connection.commit()
+        id = sensor_data['id']
+        temperature = row[0]['value']
+        humidity = row[1]['value']
+
+        if not id in last_value:
+            last_value[id] = {'temp' : 0.0, 'hum' : 0.0}
+
+        if (last_value[id]['temp'] != temperature or last_value[id]['hum'] != humidity):
+            cursor = connection.cursor()
+            now = datetime.now()
+            timestamp = datetime.timestamp(now)
+            cursor.execute('INSERT INTO sensor_data(id, timestamp, temp, humidity) VALUES (?,?,?,?)',
+                (id,timestamp, temperature, humidity))
+            connection.commit()
+            last_value[id] = {'temp' : temperature, 'hum' : humidity}
     except sqlite3.IntegrityError:
          logging.debug('Row already exists')
 

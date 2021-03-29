@@ -11,8 +11,8 @@ import database_handler
 import sensor_receiver
 import sensor_data_publisher
 
-def process_sensor_data(port, token, address):
-    connection = database_handler.setup_sqlite()
+def process_sensor_data(port, token, address, db_file):
+    connection = database_handler.setup_sqlite(db_file)
 
     while True:
         sensors = sensor_receiver.request_sensors(token, address)
@@ -32,9 +32,10 @@ def main(argv):
     port = 5555
     token = ""
     address = ""
+    db_file = "sensor_data.db"
     
     try:
-        opts, args = getopt.getopt(argv,"hp:t:n:",["port=", "token=", "telldus-address="])
+        opts, args = getopt.getopt(argv,"hp:t:n:d:",["port=", "token=", "telldus-address=", "database-file"])
     except getopt.GetoptError:
         print ('temp_server.py -p <port> -t <token> -n <telldus-address>')
         sys.exit(2)
@@ -48,10 +49,12 @@ def main(argv):
             token = arg
         elif opt in ("-n", "--telldus-address"):
             address = arg
+        elif opt in ("-d", "--database-file"):
+            db_file = arg
 
     logging.basicConfig(level=logging.INFO)
     logging.info('Starting BBTempServer')
-    process_sensor_data(port, token, address)
+    process_sensor_data(port, token, address, db_file)
 
 if __name__ == "__main__":
     main(sys.argv[1:])
