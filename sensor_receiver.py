@@ -11,17 +11,39 @@ def request_sensors(token, address):
     headers = {'Authorization': 'Bearer ' + token}
     url = 'http://' + address + '/api' + '/sensors/list'
 
-    resp = requests.get(url=url,headers=headers)
-    data = resp.json()
-    logging.debug(data)
-    return data
+    try:
+        resp = requests.get(url,headers=headers,timeout=30)
+    except Exception as err:
+        logging.error("Exception raised when requesting data from Telldus gateway " + str(err))
+        logging.error("Jumping this cycle")
+        return None
+
+    if resp.status_code is 200:
+        data = resp.json()
+        logging.debug(data)
+        return data
+    else:
+        logging.error("Bad status code from requests.get")
+        logging.error("Jumping this cycle")
+        return None
 
 def request_sensor_temperature(sensor_id, token, address):
     headers = {'Authorization': 'Bearer ' + token}
     params = {'id': sensor_id}
     url = 'http://' + address + '/api' + '/sensor/info'
+    
+    try:
+        resp = requests.get(url,params=params,headers=headers,timeout=30)
+    except Exception as err:
+        logging.error("Exception raised when requesting data from Telldus gateway " + str(err))
+        logging.error("Jumping this cycle")
+        return None
 
-    resp = requests.get(url=url,params=params,headers=headers)
-    data = resp.json()
-    logging.debug(data)
-    return data
+    if resp.status_code is 200:
+        data = resp.json()
+        logging.debug(data)
+        return data
+    else:
+        logging.error("Bad status code from requests.get")
+        logging.error("Jumping this cycle")
+        return None
